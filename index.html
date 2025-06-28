@@ -321,11 +321,27 @@ Hôpital Pellegrin (EFS);Place Amélie Raba Léon
 
         async function geocodeAddress(address) {
             try {
-                // Nettoyer l'adresse pour le géocodage
-                const cleanAddress = address.replace(/[;]/g, ', ').trim() + ', France';
+                // Améliorer le formatage de l'adresse pour Nominatim
+                let cleanAddress;
+                
+                if (address.includes(';')) {
+                    const parts = address.split(';');
+                    if (parts.length === 2) {
+                        const city = parts[0].trim();
+                        const street = parts[1].trim();
+                        // Format: "rue, ville, France"
+                        cleanAddress = `${street}, ${city}, France`;
+                    } else {
+                        cleanAddress = address.replace(/[;]/g, ', ').trim() + ', France';
+                    }
+                } else {
+                    cleanAddress = address + ', France';
+                }
+                
                 const encodedAddress = encodeURIComponent(cleanAddress);
                 
-                // Utiliser l'API Nominatim avec une URL complète
+                console.log(`Recherche pour: "${address}" → "${cleanAddress}"`);
+                
                 const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodedAddress}&limit=1&countrycodes=fr&addressdetails=1`;
                 
                 const response = await fetch(url, {
@@ -342,19 +358,20 @@ Hôpital Pellegrin (EFS);Place Amélie Raba Léon
                 const data = await response.json();
                 
                 if (data && data.length > 0) {
+                    console.log(`✅ Trouvé: ${data[0].display_name}`);
                     return {
                         lat: parseFloat(data[0].lat),
                         lon: parseFloat(data[0].lon),
                         display_name: data[0].display_name
                     };
                 } else {
-                    console.warn(`Aucun résultat pour: ${address}`);
-                    return null;
+                    // Essayer une recherche plus large si la première échoue
+                    console.log(`❌ Aucun résultat pour "${cleanAddress}", essai avec recherche élargie...`);
+                    return await geocodeAddressExtended(address);
                 }
             } catch (error) {
                 console.error('Erreur géocodage pour:', address, error);
                 
-                // Afficher une erreur plus claire
                 if (error.message.includes('Load failed') || error.message.includes('Failed to fetch')) {
                     showStatus(`⚠️ Problème de réseau. Vérifiez que vous utilisez le fichier dans un navigateur (pas dans l'interface Claude)`, 'error');
                 } else {
@@ -365,9 +382,53 @@ Hôpital Pellegrin (EFS);Place Amélie Raba Léon
             }
         }
 
-        // Supprimer la méthode fallback qui ne fonctionne pas dans l'interface Claude
-        async function geocodeAddressFallback(address) {
-            return null;
+        async function geocodeAddressExtended(address) {
+            try {
+                // Recherche élargie avec différents formats
+                const searchVariants = [];
+                
+                if (address.includes(';')) {
+                    const parts = address.split(';');
+                    const city = parts[0].trim();
+                    const street = parts[1].trim();
+                    
+                    // Différentes variantes de recherche
+                    searchVariants.push(`${street}, ${city}`);
+                    searchVariants.push(`${street} ${city}`);
+                    searchVariants.push(`${city} ${street}`);
+                    searchVariants.push(street); // Juste la rue
+                }
+                
+                for (const variant of searchVariants) {
+                    const encodedAddress = encodeURIComponent(variant + ', France');
+                    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodedAddress}&limit=1&countrycodes=fr`;
+                    
+                    console.log(`Essai variante: "${variant}"`);
+                    
+                    const response = await fetch(url);
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data && data.length > 0) {
+                            console.log(`✅ Trouvé avec variante: ${data[0].display_name}`);
+                            return {
+                                lat: parseFloat(data[0].lat),
+                                lon: parseFloat(data[0].lon),
+                                display_name: data[0].display_name
+                            };
+                        }
+                    }
+                    
+                    // Petit délai entre les tentatives
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+                
+                console.warn(`❌ Aucun résultat trouvé pour: ${address}`);
+                return null;
+                
+            } catch (error) {
+                console.error('Erreur recherche étendue:', error);
+                return null;
+            }
         }
 
         async function processAddresses() {
