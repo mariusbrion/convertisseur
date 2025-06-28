@@ -362,6 +362,12 @@ Hôpital Pellegrin (EFS);Place Amélie Raba Léon
                     <p style="margin-bottom: 15px; color: #666;">
                         Uploadez un fichier CSV avec 2 colonnes : <strong>Adresse employé</strong> | <strong>Adresse employeur</strong>
                     </p>
+                    <div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 10px; border-radius: 5px; margin-bottom: 15px; font-size: 14px;">
+                        <strong>Format attendu :</strong> CSV avec virgules comme séparateur principal.<br>
+                        <strong>Exemple :</strong><br>
+                        <code>adresse employé,adresse employeur</code><br>
+                        <code>"Bordeaux;Rue Lecoq","Hôpital Pellegrin (EFS);Place Amélie Raba Léon"</code>
+                    </div>
                     <div class="file-upload-area" onclick="document.getElementById('csvFile').click()">
                         <input type="file" id="csvFile" class="file-input" accept=".csv" onchange="handleFileSelect(event)">
                         <div class="upload-icon">📄</div>
@@ -370,7 +376,8 @@ Hôpital Pellegrin (EFS);Place Amélie Raba Léon
                     </div>
                     <div id="fileInfo" class="file-info">
                         <strong>Fichier sélectionné :</strong> <span id="fileName"></span><br>
-                        <strong>Nombre de lignes :</strong> <span id="fileRows"></span>
+                        <strong>Nombre de lignes :</strong> <span id="fileRows"></span><br>
+                        <div id="dataPreview" style="margin-top: 10px; font-family: monospace; font-size: 12px; background: #f8f9fa; padding: 10px; border-radius: 3px;"></div>
                     </div>
                 </div>
             </div>
@@ -481,25 +488,33 @@ Hôpital Pellegrin (EFS);Place Amélie Raba Léon
                                   lines[0].toLowerCase().includes('adresse') ||
                                   lines[0].toLowerCase().includes('employee')) ? 1 : 0;
 
+                console.log('Première ligne:', lines[0]);
+                console.log('Index de départ:', startIndex);
+
                 for (let i = startIndex; i < lines.length; i++) {
                     const line = lines[i].trim();
                     if (!line) continue;
 
-                    // Détecter le séparateur (virgule, point-virgule, ou tabulation)
-                    let separator = ',';
-                    if (line.includes(';') && line.split(';').length >= 2) {
-                        separator = ';';
-                    } else if (line.includes('\t') && line.split('\t').length >= 2) {
-                        separator = '\t';
-                    }
+                    console.log(`Ligne ${i}:`, line);
 
-                    const parts = line.split(separator);
+                    // Parser CSV plus robuste pour gérer les guillemets et virgules dans les données
+                    const parts = parseCSVLine(line);
+                    
+                    console.log(`Parties détectées:`, parts);
                     
                     if (parts.length >= 2) {
-                        uploadedData.push({
-                            employee: parts[0].trim().replace(/["']/g, ''),
-                            employer: parts[1].trim().replace(/["']/g, '')
-                        });
+                        const employee = parts[0].trim().replace(/^["']|["']$/g, '');
+                        const employer = parts[1].trim().replace(/^["']|["']$/g, '');
+                        
+                        if (employee && employer) {
+                            uploadedData.push({
+                                employee: employee,
+                                employer: employer
+                            });
+                            console.log(`Ajouté: ${employee} -> ${employer}`);
+                        }
+                    } else {
+                        console.warn(`Ligne ignorée (format incorrect): ${line}`);
                     }
                 }
 
@@ -513,11 +528,67 @@ Hôpital Pellegrin (EFS);Place Amélie Raba Léon
                 document.getElementById('fileRows').textContent = uploadedData.length;
                 document.getElementById('fileInfo').style.display = 'block';
 
+                // Afficher un aperçu des premières données
+                const preview = document.getElementById('dataPreview');
+                if (uploadedData.length > 0) {
+                    let previewText = 'Aperçu des données:\n';
+                    const showCount = Math.min(3, uploadedData.length);
+                    for (let i = 0; i < showCount; i++) {
+                        previewText += `${i+1}. Employé: "${uploadedData[i].employee}"\n   Employeur: "${uploadedData[i].employer}"\n\n`;
+                    }
+                    if (uploadedData.length > 3) {
+                        previewText += `... et ${uploadedData.length - 3} autres lignes`;
+                    }
+                    preview.textContent = previewText;
+                } else {
+                    preview.textContent = 'Aucune donnée valide trouvée';
+                }
+
                 showStatus(`Fichier CSV chargé avec succès : ${uploadedData.length} paires d'adresses trouvées`, 'success');
 
+                // Afficher un aperçu des données dans la console
+                console.log('Données chargées:', uploadedData.slice(0, 3));
+
             } catch (error) {
+                console.error('Erreur parsing CSV:', error);
                 showStatus('Erreur lors de la lecture du fichier CSV : ' + error.message, 'error');
             }
+        }
+
+        function parseCSVLine(line) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+            let quoteChar = '';
+            
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                const nextChar = line[i + 1];
+                
+                if (!inQuotes && (char === '"' || char === "'")) {
+                    inQuotes = true;
+                    quoteChar = char;
+                } else if (inQuotes && char === quoteChar) {
+                    if (nextChar === quoteChar) {
+                        // Guillemet échappé
+                        current += char;
+                        i++; // Skip next quote
+                    } else {
+                        inQuotes = false;
+                        quoteChar = '';
+                    }
+                } else if (!inQuotes && char === ',') {
+                    result.push(current);
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            
+            // Ajouter le dernier élément
+            result.push(current);
+            
+            return result;
         }
 
         // Drag and drop functionality
