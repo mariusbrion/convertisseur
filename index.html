@@ -250,7 +250,7 @@ Bordeaux;Avenue Jean Cordier<br>
 Hôpital Pellegrin (EFS);Place Amélie Raba Léon
                 </code>
                 <p style="margin-top: 10px; font-size: 14px; color: #666;">
-                    <strong>Format de sortie :</strong> <code>id;start_lat;start_lon;end_lat;end_lon</code>
+                    <strong>Format de sortie :</strong> <code>id,start_lat,start_lon,end_lat,end_lon</code> (CSV avec virgules)
                 </p>
             </div>
 
@@ -546,10 +546,10 @@ Hôpital Pellegrin (EFS);Place Amélie Raba Léon
         }
 
         function generateCSV() {
-            let csvContent = 'id;start_lat;start_lon;end_lat;end_lon\n';
+            let csvContent = 'id,start_lat,start_lon,end_lat,end_lon\n';
             
             processedData.forEach(row => {
-                csvContent += `${row.id};${row.start_lat};${row.start_lon};${row.end_lat};${row.end_lon}\n`;
+                csvContent += `${row.id},${row.start_lat},${row.start_lon},${row.end_lat},${row.end_lon}\n`;
             });
             
             csvData = csvContent;
