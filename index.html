@@ -59,6 +59,90 @@
             font-size: 1.5em;
         }
 
+        .input-tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tab-button {
+            background: none;
+            border: none;
+            padding: 15px 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .tab-button.active {
+            color: #4facfe;
+            border-bottom-color: #4facfe;
+        }
+
+        .tab-button:hover {
+            color: #4facfe;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .file-upload-area {
+            border: 2px dashed #4facfe;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            background: #f8f9ff;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .file-upload-area:hover {
+            background: #f0f4ff;
+            border-color: #667eea;
+        }
+
+        .file-upload-area.dragover {
+            background: #e6f2ff;
+            border-color: #667eea;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .upload-icon {
+            font-size: 3em;
+            color: #4facfe;
+            margin-bottom: 15px;
+        }
+
+        .upload-text {
+            font-size: 1.2em;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .upload-hint {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .file-info {
+            margin-top: 15px;
+            padding: 10px;
+            background: #e6f7ff;
+            border-radius: 5px;
+            display: none;
+        }
+
         textarea {
             width: 100%;
             min-height: 300px;
@@ -222,6 +306,20 @@
             button {
                 width: 100%;
             }
+
+            .input-tabs {
+                flex-direction: column;
+            }
+
+            .tab-button {
+                border-bottom: 1px solid #e0e0e0;
+                border-right: none;
+            }
+
+            .tab-button.active {
+                border-right: none;
+                border-left: 3px solid #4facfe;
+            }
         }
     </style>
 </head>
@@ -234,33 +332,47 @@
 
         <div class="main-content">
             <div class="example">
-                <h3>⚠️ IMPORTANT - Pour utiliser ce convertisseur :</h3>
-                <div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 8px; margin: 10px 0;">
-                    <p><strong>1.</strong> Copiez ce code HTML complet</p>
-                    <p><strong>2.</strong> Sauvegardez-le dans un fichier <code>.html</code> sur votre ordinateur</p>
-                    <p><strong>3.</strong> Ouvrez le fichier dans votre navigateur (Chrome, Firefox, etc.)</p>
-                    <p><strong style="color: #d63031;">⚠️ Ne fonctionne pas dans l'interface de prévisualisation Claude</strong></p>
-                </div>
-                
-                <h3>Format d'entrée attendu :</h3>
-                <code>
-Bordeaux;Rue Lecoq<br>
-Hôpital Pellegrin (EFS);Place Amélie Raba Léon<br>
-Bordeaux;Avenue Jean Cordier<br>
-Hôpital Pellegrin (EFS);Place Amélie Raba Léon
-                </code>
+                <h3>Format de sortie :</h3>
+                <p><strong>CSV généré :</strong> <code>id,start_lat,start_lon,end_lat,end_lon</code></p>
                 <p style="margin-top: 10px; font-size: 14px; color: #666;">
-                    <strong>Format de sortie :</strong> <code>id,start_lat,start_lon,end_lat,end_lon</code> (CSV avec virgules)
+                    Les coordonnées de départ correspondent à l'adresse de l'employé, les coordonnées d'arrivée à l'adresse de l'employeur.
                 </p>
             </div>
 
             <div class="input-section">
-                <h2>📝 Collez vos adresses ici</h2>
-                <textarea id="addressInput" placeholder="Bordeaux;Rue Lecoq
+                <h2>📝 Choisissez votre méthode d'import</h2>
+                
+                <div class="input-tabs">
+                    <button class="tab-button active" onclick="switchTab('manual')">✏️ Saisie manuelle</button>
+                    <button class="tab-button" onclick="switchTab('csv')">📄 Import fichier CSV</button>
+                </div>
+
+                <div id="manual-tab" class="tab-content active">
+                    <p style="margin-bottom: 15px; color: #666;">
+                        Format attendu : une ligne pour l'employé, une ligne pour l'employeur, puis répéter.
+                    </p>
+                    <textarea id="addressInput" placeholder="Bordeaux;Rue Lecoq
 Hôpital Pellegrin (EFS);Place Amélie Raba Léon
 Bordeaux;Avenue Jean Cordier
 Hôpital Pellegrin (EFS);Place Amélie Raba Léon
 ..."></textarea>
+                </div>
+
+                <div id="csv-tab" class="tab-content">
+                    <p style="margin-bottom: 15px; color: #666;">
+                        Uploadez un fichier CSV avec 2 colonnes : <strong>Adresse employé</strong> | <strong>Adresse employeur</strong>
+                    </p>
+                    <div class="file-upload-area" onclick="document.getElementById('csvFile').click()">
+                        <input type="file" id="csvFile" class="file-input" accept=".csv" onchange="handleFileSelect(event)">
+                        <div class="upload-icon">📄</div>
+                        <div class="upload-text">Cliquez pour sélectionner un fichier CSV</div>
+                        <div class="upload-hint">ou glissez-déposez votre fichier ici</div>
+                    </div>
+                    <div id="fileInfo" class="file-info">
+                        <strong>Fichier sélectionné :</strong> <span id="fileName"></span><br>
+                        <strong>Nombre de lignes :</strong> <span id="fileRows"></span>
+                    </div>
+                </div>
             </div>
 
             <div class="controls">
@@ -286,6 +398,23 @@ Hôpital Pellegrin (EFS);Place Amélie Raba Léon
     <script>
         let csvData = '';
         let processedData = [];
+        let uploadedData = [];
+
+        function switchTab(tabName) {
+            // Cacher tous les contenus d'onglets
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Cacher tous les boutons d'onglets
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('active');
+            });
+            
+            // Afficher l'onglet sélectionné
+            document.getElementById(tabName + '-tab').classList.add('active');
+            event.target.classList.add('active');
+        }
 
         function showStatus(message, type = 'info') {
             const container = document.getElementById('statusContainer');
@@ -318,6 +447,109 @@ Hôpital Pellegrin (EFS);Place Amélie Raba Léon
                 }, 1000);
             }
         }
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (!file.name.toLowerCase().endsWith('.csv')) {
+                showStatus('Veuillez sélectionner un fichier CSV', 'error');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const csvText = e.target.result;
+                parseCsvData(csvText, file.name);
+            };
+            reader.readAsText(file);
+        }
+
+        function parseCsvData(csvText, fileName) {
+            try {
+                const lines = csvText.split('\n').filter(line => line.trim());
+                
+                if (lines.length === 0) {
+                    showStatus('Le fichier CSV est vide', 'error');
+                    return;
+                }
+
+                uploadedData = [];
+                
+                // Ignorer la première ligne si elle ressemble à un en-tête
+                const startIndex = (lines[0].toLowerCase().includes('employé') || 
+                                  lines[0].toLowerCase().includes('adresse') ||
+                                  lines[0].toLowerCase().includes('employee')) ? 1 : 0;
+
+                for (let i = startIndex; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (!line) continue;
+
+                    // Détecter le séparateur (virgule, point-virgule, ou tabulation)
+                    let separator = ',';
+                    if (line.includes(';') && line.split(';').length >= 2) {
+                        separator = ';';
+                    } else if (line.includes('\t') && line.split('\t').length >= 2) {
+                        separator = '\t';
+                    }
+
+                    const parts = line.split(separator);
+                    
+                    if (parts.length >= 2) {
+                        uploadedData.push({
+                            employee: parts[0].trim().replace(/["']/g, ''),
+                            employer: parts[1].trim().replace(/["']/g, '')
+                        });
+                    }
+                }
+
+                if (uploadedData.length === 0) {
+                    showStatus('Aucune donnée valide trouvée dans le fichier CSV. Vérifiez le format.', 'error');
+                    return;
+                }
+
+                // Afficher les informations du fichier
+                document.getElementById('fileName').textContent = fileName;
+                document.getElementById('fileRows').textContent = uploadedData.length;
+                document.getElementById('fileInfo').style.display = 'block';
+
+                showStatus(`Fichier CSV chargé avec succès : ${uploadedData.length} paires d'adresses trouvées`, 'success');
+
+            } catch (error) {
+                showStatus('Erreur lors de la lecture du fichier CSV : ' + error.message, 'error');
+            }
+        }
+
+        // Drag and drop functionality
+        const uploadArea = document.querySelector('.file-upload-area');
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                const file = files[0];
+                if (file.name.toLowerCase().endsWith('.csv')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        parseCsvData(e.target.result, file.name);
+                    };
+                    reader.readAsText(file);
+                } else {
+                    showStatus('Veuillez déposer un fichier CSV', 'error');
+                }
+            }
+        });
 
         async function geocodeAddress(address) {
             try {
@@ -373,7 +605,7 @@ Hôpital Pellegrin (EFS);Place Amélie Raba Léon
                 console.error('Erreur géocodage pour:', address, error);
                 
                 if (error.message.includes('Load failed') || error.message.includes('Failed to fetch')) {
-                    showStatus(`⚠️ Problème de réseau. Vérifiez que vous utilisez le fichier dans un navigateur (pas dans l'interface Claude)`, 'error');
+                    showStatus(`⚠️ Problème de réseau. Vérifiez votre connexion internet.`, 'error');
                 } else {
                     showStatus(`❌ Impossible de géocoder: ${address}`, 'error');
                 }
@@ -432,9 +664,38 @@ Hôpital Pellegrin (EFS);Place Amélie Raba Léon
         }
 
         async function processAddresses() {
-            const input = document.getElementById('addressInput').value.trim();
-            if (!input) {
-                showStatus('Veuillez entrer des adresses', 'error');
+            const activeTab = document.querySelector('.tab-content.active').id;
+            let pairs = [];
+
+            if (activeTab === 'manual-tab') {
+                const input = document.getElementById('addressInput').value.trim();
+                if (!input) {
+                    showStatus('Veuillez entrer des adresses', 'error');
+                    return;
+                }
+
+                const lines = input.split('\n').filter(line => line.trim());
+                
+                // Grouper les lignes par paires
+                for (let i = 0; i < lines.length; i += 2) {
+                    if (i + 1 < lines.length) {
+                        pairs.push({
+                            employee: lines[i].trim(),
+                            employer: lines[i + 1].trim()
+                        });
+                    }
+                }
+            } else {
+                // Utiliser les données du fichier CSV
+                if (uploadedData.length === 0) {
+                    showStatus('Veuillez d\'abord charger un fichier CSV', 'error');
+                    return;
+                }
+                pairs = uploadedData;
+            }
+
+            if (pairs.length === 0) {
+                showStatus('Aucune paire d\'adresses trouvée. Vérifiez vos données.', 'error');
                 return;
             }
 
@@ -446,24 +707,6 @@ Hôpital Pellegrin (EFS);Place Amélie Raba Léon
             processBtn.textContent = '⏳ Traitement...';
 
             try {
-                const lines = input.split('\n').filter(line => line.trim());
-                const pairs = [];
-                
-                // Grouper les lignes par paires
-                for (let i = 0; i < lines.length; i += 2) {
-                    if (i + 1 < lines.length) {
-                        pairs.push({
-                            employee: lines[i].trim(),
-                            employer: lines[i + 1].trim()
-                        });
-                    }
-                }
-
-                if (pairs.length === 0) {
-                    showStatus('Format incorrect. Vérifiez vos données.', 'error');
-                    return;
-                }
-
                 showStatus(`Début du traitement de ${pairs.length} paires d'adresses`, 'info');
                 
                 processedData = [];
@@ -585,8 +828,11 @@ Hôpital Pellegrin (EFS);Place Amélie Raba Léon
             document.getElementById('outputArea').textContent = 'Le fichier CSV apparaîtra ici après conversion...';
             document.getElementById('downloadBtn').disabled = true;
             document.getElementById('statusContainer').innerHTML = '';
+            document.getElementById('fileInfo').style.display = 'none';
+            document.getElementById('csvFile').value = '';
             csvData = '';
             processedData = [];
+            uploadedData = [];
             
             showStatus('Données effacées', 'info');
         }
