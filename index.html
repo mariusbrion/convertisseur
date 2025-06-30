@@ -209,13 +209,22 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
             padding: 12px 25px;
             border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            text-decoration: none;
         }
 
         .next-btn:hover {
-            background: linear-gradient(135deg, #3b9ae6 0%, #00d9e6 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
         }
 
         .next-btn .arrow {
