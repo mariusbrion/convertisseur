@@ -174,7 +174,7 @@
             border: none;
             padding: 12px 25px;
             border-radius: 25px;
-           门户: pointer;
+            cursor: pointer;
             font-size: 16px;
             font-weight: 600;
             transition: all 0.3s ease;
@@ -272,7 +272,7 @@
 
         .example {
             background: #f8f9fa;
-            border-left: 4px solid #4facfe;
+            border-left: 4pxapsing: 0;
             padding: 15px;
             margin: 15px 0;
             border-radius: 0 8px 8px 0;
@@ -822,11 +822,11 @@ Hôpital Pellegrin (EFS);Place Amélie Raba Léon
                     employerGroups[pair.employer].count++;
                     const employeeNumber = employerGroups[pair.employer].count;
                     
-                    // Créer un ID basé sur l'adresse de l'employeur
+                    // Créer un ID basé sur l'adresse de l'employeur avec underscores
                     let id = pair.employer.split(';')[0].trim(); // Prendre la première partie avant le point-virgule
-                    // Nettoyer l'ID pour enlever les caractères problématiques pour le CSV
-                    id = id.replace(/[,;"]/g, '').trim();
-                    id = `${id} ${employeeNumber}`; // Ajouter le numéro de l'employé
+                    // Nettoyer l'ID pour enlever les caractères problématiques pour le CSV et remplacer les espaces par des underscores
+                    id = id.replace(/[,;"]/g, '').replace(/\s+/g, '_').trim();
+                    id = `${id}_${employeeNumber}`; // Ajouter le numéro de l'employé avec un underscore
                     
                     processedData.push({
                         id: id,
