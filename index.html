@@ -272,7 +272,7 @@
 
         .example {
             background: #f8f9fa;
-            border-left: 4pxapsing: 0;
+            border-left: 4px solid #4facfe;
             padding: 15px;
             margin: 15px 0;
             border-radius: 0 8px 8px 0;
@@ -782,6 +782,7 @@ Hôpital Pellegrin (EFS);Place Amélie Raba Léon
                 
                 processedData = [];
                 const employerGroups = {};
+                let currentLetter = 'a';
                 
                 updateProgress(0, pairs.length);
 
@@ -799,10 +800,12 @@ Hôpital Pellegrin (EFS);Place Amélie Raba Léon
 
                     // Géocoder l'adresse de l'employeur
                     let employerCoords;
+                    let groupId;
                     
                     if (employerGroups[pair.employer]) {
                         // Employeur déjà traité
                         employerCoords = employerGroups[pair.employer].coords;
+                        groupId = employerGroups[pair.employer].groupId;
                     } else {
                         // Nouveau lieu de travail
                         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -813,20 +816,19 @@ Hôpital Pellegrin (EFS);Place Amélie Raba Léon
                             continue;
                         }
                         
+                        groupId = currentLetter;
                         employerGroups[pair.employer] = {
                             coords: employerCoords,
+                            groupId: currentLetter,
                             count: 0
                         };
+                        currentLetter = String.fromCharCode(currentLetter.charCodeAt(0) + 1);
                     }
                     
                     employerGroups[pair.employer].count++;
                     const employeeNumber = employerGroups[pair.employer].count;
                     
-                    // Créer un ID basé sur l'adresse de l'employeur avec underscores
-                    let id = pair.employer.split(';')[0].trim(); // Prendre la première partie avant le point-virgule
-                    // Nettoyer l'ID pour enlever les caractères problématiques pour le CSV et remplacer les espaces par des underscores
-                    id = id.replace(/[,;"]/g, '').replace(/\s+/g, '_').trim();
-                    id = `${id}_${employeeNumber}`; // Ajouter le numéro de l'employé avec un underscore
+                    const id = `employé ${groupId}${employeeNumber}`;
                     
                     processedData.push({
                         id: id,
@@ -861,7 +863,7 @@ Hôpital Pellegrin (EFS);Place Amélie Raba Léon
             let csvContent = 'id,start_lat,start_lon,end_lat,end_lon\n';
             
             processedData.forEach(row => {
-                csvContent += `"${row.id}",${row.start_lat},${row.start_lon},${row.end_lat},${row.end_lon}\n`;
+                csvContent += `${row.id},${row.start_lat},${row.start_lon},${row.end_lat},${row.end_lon}\n`;
             });
             
             csvData = csvContent;
