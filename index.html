@@ -47,6 +47,7 @@
 
         .main-content {
             padding: 40px;
+            position: relative;
         }
 
         .input-section {
@@ -201,6 +202,26 @@
             background: linear-gradient(135deg, #ff6b6b 0%, #ffa8a8 100%);
         }
 
+        .next-btn {
+            position: absolute;
+            bottom: 40px;
+            right: 40px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            padding: 12px 25px;
+            border-radius: 25px;
+        }
+
+        .next-btn:hover {
+            background: linear-gradient(135deg, #3b9ae6 0%, #00d9e6 100%);
+        }
+
+        .next-btn .arrow {
+            font-size: 1.2em;
+        }
+
         .progress-container {
             margin: 20px 0;
             background: #f0f0f0;
@@ -320,6 +341,13 @@
                 border-right: none;
                 border-left: 3px solid #4facfe;
             }
+
+            .next-btn {
+                position: static;
+                margin-top: 20px;
+                width: 100%;
+                justify-content: center;
+            }
         }
     </style>
 </head>
@@ -340,25 +368,9 @@
             </div>
 
             <div class="input-section">
-                <h2>📝 Choisissez votre méthode d'import</h2>
+                <h2>📝 Importez votre fichier CSV</h2>
                 
-                <div class="input-tabs">
-                    <button class="tab-button active" onclick="switchTab('manual')">✏️ Saisie manuelle</button>
-                    <button class="tab-button" onclick="switchTab('csv')">📄 Import fichier CSV</button>
-                </div>
-
-                <div id="manual-tab" class="tab-content active">
-                    <p style="margin-bottom: 15px; color: #666;">
-                        Format attendu : une ligne pour l'employé, une ligne pour l'employeur, puis répéter.
-                    </p>
-                    <textarea id="addressInput" placeholder="Bordeaux;Rue Lecoq
-Hôpital Pellegrin (EFS);Place Amélie Raba Léon
-Bordeaux;Avenue Jean Cordier
-Hôpital Pellegrin (EFS);Place Amélie Raba Léon
-..."></textarea>
-                </div>
-
-                <div id="csv-tab" class="tab-content">
+                <div id="csv-tab" class="tab-content active">
                     <p style="margin-bottom: 15px; color: #666;">
                         Uploadez un fichier CSV avec 2 colonnes : <strong>Adresse employé</strong> | <strong>Adresse employeur</strong>
                     </p>
@@ -399,6 +411,11 @@ Hôpital Pellegrin (EFS);Place Amélie Raba Léon
                 <h2>📊 Résultat CSV</h2>
                 <div class="output-area" id="outputArea">Le fichier CSV apparaîtra ici après conversion...</div>
             </div>
+
+            <a href="https://mariusbrion.github.io/point-en-trajet/" class="next-btn">
+                <span>Étape suivante</span>
+                <span class="arrow">➔</span>
+            </a>
         </div>
     </div>
 
@@ -406,22 +423,6 @@ Hôpital Pellegrin (EFS);Place Amélie Raba Léon
         let csvData = '';
         let processedData = [];
         let uploadedData = [];
-
-        function switchTab(tabName) {
-            // Cacher tous les contenus d'onglets
-            document.querySelectorAll('.tab-content').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            
-            // Cacher tous les boutons d'onglets
-            document.querySelectorAll('.tab-button').forEach(button => {
-                button.classList.remove('active');
-            });
-            
-            // Afficher l'onglet sélectionné
-            document.getElementById(tabName + '-tab').classList.add('active');
-            event.target.classList.add('active');
-        }
 
         function showStatus(message, type = 'info') {
             const container = document.getElementById('statusContainer');
@@ -483,24 +484,15 @@ Hôpital Pellegrin (EFS);Place Amélie Raba Léon
 
                 uploadedData = [];
                 
-                // Ignorer la première ligne si elle ressemble à un en-tête
                 const startIndex = (lines[0].toLowerCase().includes('employé') || 
                                   lines[0].toLowerCase().includes('adresse') ||
                                   lines[0].toLowerCase().includes('employee')) ? 1 : 0;
-
-                console.log('Première ligne:', lines[0]);
-                console.log('Index de départ:', startIndex);
 
                 for (let i = startIndex; i < lines.length; i++) {
                     const line = lines[i].trim();
                     if (!line) continue;
 
-                    console.log(`Ligne ${i}:`, line);
-
-                    // Parser CSV plus robuste pour gérer les guillemets et virgules dans les données
                     const parts = parseCSVLine(line);
-                    
-                    console.log(`Parties détectées:`, parts);
                     
                     if (parts.length >= 2) {
                         const employee = parts[0].trim().replace(/^["']|["']$/g, '');
@@ -511,10 +503,7 @@ Hôpital Pellegrin (EFS);Place Amélie Raba Léon
                                 employee: employee,
                                 employer: employer
                             });
-                            console.log(`Ajouté: ${employee} -> ${employer}`);
                         }
-                    } else {
-                        console.warn(`Ligne ignorée (format incorrect): ${line}`);
                     }
                 }
 
@@ -523,12 +512,10 @@ Hôpital Pellegrin (EFS);Place Amélie Raba Léon
                     return;
                 }
 
-                // Afficher les informations du fichier
                 document.getElementById('fileName').textContent = fileName;
                 document.getElementById('fileRows').textContent = uploadedData.length;
                 document.getElementById('fileInfo').style.display = 'block';
 
-                // Afficher un aperçu des premières données
                 const preview = document.getElementById('dataPreview');
                 if (uploadedData.length > 0) {
                     let previewText = 'Aperçu des données:\n';
@@ -545,9 +532,6 @@ Hôpital Pellegrin (EFS);Place Amélie Raba Léon
                 }
 
                 showStatus(`Fichier CSV chargé avec succès : ${uploadedData.length} paires d'adresses trouvées`, 'success');
-
-                // Afficher un aperçu des données dans la console
-                console.log('Données chargées:', uploadedData.slice(0, 3));
 
             } catch (error) {
                 console.error('Erreur parsing CSV:', error);
@@ -570,9 +554,8 @@ Hôpital Pellegrin (EFS);Place Amélie Raba Léon
                     quoteChar = char;
                 } else if (inQuotes && char === quoteChar) {
                     if (nextChar === quoteChar) {
-                        // Guillemet échappé
                         current += char;
-                        i++; // Skip next quote
+                        i++;
                     } else {
                         inQuotes = false;
                         quoteChar = '';
@@ -585,13 +568,11 @@ Hôpital Pellegrin (EFS);Place Amélie Raba Léon
                 }
             }
             
-            // Ajouter le dernier élément
             result.push(current);
             
             return result;
         }
 
-        // Drag and drop functionality
         const uploadArea = document.querySelector('.file-upload-area');
         
         uploadArea.addEventListener('dragover', (e) => {
@@ -624,7 +605,6 @@ Hôpital Pellegrin (EFS);Place Amélie Raba Léon
 
         async function geocodeAddress(address) {
             try {
-                // Améliorer le formatage de l'adresse pour Nominatim
                 let cleanAddress;
                 
                 if (address.includes(';')) {
@@ -632,7 +612,6 @@ Hôpital Pellegrin (EFS);Place Amélie Raba Léon
                     if (parts.length === 2) {
                         const city = parts[0].trim();
                         const street = parts[1].trim();
-                        // Format: "rue, ville, France"
                         cleanAddress = `${street}, ${city}, France`;
                     } else {
                         cleanAddress = address.replace(/[;]/g, ', ').trim() + ', France';
@@ -642,8 +621,6 @@ Hôpital Pellegrin (EFS);Place Amélie Raba Léon
                 }
                 
                 const encodedAddress = encodeURIComponent(cleanAddress);
-                
-                console.log(`Recherche pour: "${address}" → "${cleanAddress}"`);
                 
                 const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodedAddress}&limit=1&countrycodes=fr&addressdetails=1`;
                 
@@ -661,15 +638,12 @@ Hôpital Pellegrin (EFS);Place Amélie Raba Léon
                 const data = await response.json();
                 
                 if (data && data.length > 0) {
-                    console.log(`✅ Trouvé: ${data[0].display_name}`);
                     return {
                         lat: parseFloat(data[0].lat),
                         lon: parseFloat(data[0].lon),
                         display_name: data[0].display_name
                     };
                 } else {
-                    // Essayer une recherche plus large si la première échoue
-                    console.log(`❌ Aucun résultat pour "${cleanAddress}", essai avec recherche élargie...`);
                     return await geocodeAddressExtended(address);
                 }
             } catch (error) {
@@ -687,7 +661,6 @@ Hôpital Pellegrin (EFS);Place Amélie Raba Léon
 
         async function geocodeAddressExtended(address) {
             try {
-                // Recherche élargie avec différents formats
                 const searchVariants = [];
                 
                 if (address.includes(';')) {
@@ -695,24 +668,20 @@ Hôpital Pellegrin (EFS);Place Amélie Raba Léon
                     const city = parts[0].trim();
                     const street = parts[1].trim();
                     
-                    // Différentes variantes de recherche
                     searchVariants.push(`${street}, ${city}`);
                     searchVariants.push(`${street} ${city}`);
                     searchVariants.push(`${city} ${street}`);
-                    searchVariants.push(street); // Juste la rue
+                    searchVariants.push(street);
                 }
                 
                 for (const variant of searchVariants) {
                     const encodedAddress = encodeURIComponent(variant + ', France');
                     const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodedAddress}&limit=1&countrycodes=fr`;
                     
-                    console.log(`Essai variante: "${variant}"`);
-                    
                     const response = await fetch(url);
                     if (response.ok) {
                         const data = await response.json();
                         if (data && data.length > 0) {
-                            console.log(`✅ Trouvé avec variante: ${data[0].display_name}`);
                             return {
                                 lat: parseFloat(data[0].lat),
                                 lon: parseFloat(data[0].lon),
@@ -721,11 +690,9 @@ Hôpital Pellegrin (EFS);Place Amélie Raba Léon
                         }
                     }
                     
-                    // Petit délai entre les tentatives
                     await new Promise(resolve => setTimeout(resolve, 500));
                 }
                 
-                console.warn(`❌ Aucun résultat trouvé pour: ${address}`);
                 return null;
                 
             } catch (error) {
@@ -735,35 +702,11 @@ Hôpital Pellegrin (EFS);Place Amélie Raba Léon
         }
 
         async function processAddresses() {
-            const activeTab = document.querySelector('.tab-content.active').id;
-            let pairs = [];
-
-            if (activeTab === 'manual-tab') {
-                const input = document.getElementById('addressInput').value.trim();
-                if (!input) {
-                    showStatus('Veuillez entrer des adresses', 'error');
-                    return;
-                }
-
-                const lines = input.split('\n').filter(line => line.trim());
-                
-                // Grouper les lignes par paires
-                for (let i = 0; i < lines.length; i += 2) {
-                    if (i + 1 < lines.length) {
-                        pairs.push({
-                            employee: lines[i].trim(),
-                            employer: lines[i + 1].trim()
-                        });
-                    }
-                }
-            } else {
-                // Utiliser les données du fichier CSV
-                if (uploadedData.length === 0) {
-                    showStatus('Veuillez d\'abord charger un fichier CSV', 'error');
-                    return;
-                }
-                pairs = uploadedData;
+            if (uploadedData.length === 0) {
+                showStatus('Veuillez d\'abord charger un fichier CSV', 'error');
+                return;
             }
+            const pairs = uploadedData;
 
             if (pairs.length === 0) {
                 showStatus('Aucune paire d\'adresses trouvée. Vérifiez vos données.', 'error');
@@ -789,8 +732,7 @@ Hôpital Pellegrin (EFS);Place Amélie Raba Léon
                 for (let i = 0; i < pairs.length; i++) {
                     const pair = pairs[i];
                     
-                    // Géocoder l'adresse de l'employé
-                    await new Promise(resolve => setTimeout(resolve, 1000)); // Délai pour éviter la limite de taux
+                    await new Promise(resolve => setTimeout(resolve, 1000));
                     const employeeCoords = await geocodeAddress(pair.employee);
                     
                     if (!employeeCoords) {
@@ -798,16 +740,13 @@ Hôpital Pellegrin (EFS);Place Amélie Raba Léon
                         continue;
                     }
 
-                    // Géocoder l'adresse de l'employeur
                     let employerCoords;
                     let groupId;
                     
                     if (employerGroups[pair.employer]) {
-                        // Employeur déjà traité
                         employerCoords = employerGroups[pair.employer].coords;
                         groupId = employerGroups[pair.employer].groupId;
                     } else {
-                        // Nouveau lieu de travail
                         await new Promise(resolve => setTimeout(resolve, 1000));
                         employerCoords = await geocodeAddress(pair.employer);
                         
@@ -843,7 +782,6 @@ Hôpital Pellegrin (EFS);Place Amélie Raba Léon
                     updateProgress(i + 1, pairs.length);
                 }
 
-                // Générer le CSV
                 generateCSV();
                 showStatus(`Traitement terminé! ${processedData.length} adresses converties avec succès.`, 'success');
                 
@@ -868,7 +806,6 @@ Hôpital Pellegrin (EFS);Place Amélie Raba Léon
             
             csvData = csvContent;
             
-            // Afficher le résultat
             document.getElementById('outputArea').textContent = csvContent;
         }
 
@@ -895,7 +832,6 @@ Hôpital Pellegrin (EFS);Place Amélie Raba Léon
         }
 
         function clearAll() {
-            document.getElementById('addressInput').value = '';
             document.getElementById('outputArea').textContent = 'Le fichier CSV apparaîtra ici après conversion...';
             document.getElementById('downloadBtn').disabled = true;
             document.getElementById('statusContainer').innerHTML = '';
